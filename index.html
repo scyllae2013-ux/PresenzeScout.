@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Presenze Scout</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts & FontAwesome -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            cigni: { DEFAULT: '#4f46e5', light: '#eef2ff', dark: '#3730a3' },
+            antilopi: { DEFAULT: '#f59e0b', light: '#fffbe3', dark: '#b45309' },
+            leoni: { DEFAULT: '#10b981', light: '#f0fdf4', dark: '#047857' },
+            tigri: { DEFAULT: '#ef4444', light: '#fef2f2', dark: '#b91c1c' }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f3f4f6;
+      touch-action: manipulation;
+    }
+    
+    .card-shadow {
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+    }
+
+    .turni-btn.active-plus {
+      background-color: #10b981 !important;
+      color: white !important;
+      border-color: #10b981 !important;
+    }
+
+    .turni-btn.active-minus {
+      background-color: #ef4444 !important;
+      color: white !important;
+      border-color: #ef4444 !important;
+    }
+
+    .turni-btn.active-zero {
+      background-color: #6b7280 !important;
+      color: white !important;
+      border-color: #6b7280 !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-12 select-none">
+
+  <!-- HEADER APPLICAZIONE -->
+  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center gap-2.5">
+        <span class="text-2xl">⚜️</span>
+        <div>
+          <h1 class="font-extrabold text-base tracking-wide leading-none">PRESENZE SCOUT</h1>
+          <p class="text-[11px] text-slate-400 font-medium">Registro Punteggi Squadriglie</p>
+        </div>
+      </div>
+      <button onclick="clearAllData()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-1.5 px-3 rounded-lg border border-slate-700 transition active:scale-95">
+        <i class="fa-solid fa-rotate-right mr-1"></i> Reset
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENITORE PRINCIPALE -->
+  <main class="max-w-2xl mx-auto px-3 pt-4">
+
+    <!-- GRIGLIA SELEZIONE SQUADRIGLIE CON PULSANTE + -->
+    <div id="squads-grid" class="grid grid-cols-2 gap-3 mb-4">
+      <!-- Pulsanti squadriglie generati dinamicamente -->
+    </div>
+
+    <!-- BANNER COLORATO SQUADRIGLIA ATTIVA -->
+    <div id="squad-banner" class="bg-cigni text-white rounded-3xl p-5 mb-4 shadow-lg transition-all duration-300">
+      <div class="flex justify-between items-start gap-2">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <span id="squad-banner-icon" class="text-3xl">🦢</span>
+            <h2 id="squad-banner-title" class="text-2xl font-black uppercase tracking-wider">SQUADRIGLIA CIGNI</h2>
+          </div>
+          <p class="text-xs text-white/80 font-semibold mt-1">Gestione registro presenze & punteggi</p>
+        </div>
+
+        <!-- BOX TOTALE SQUADRA -->
+        <div class="bg-white/25 backdrop-blur-md border border-white/30 rounded-2xl p-3 text-center min-w-[110px] shrink-0">
+          <span class="block text-[10px] font-black uppercase tracking-wider text-white/90">TOTALE SQUADRA</span>
+          <span id="squad-grand-tot" class="text-2xl font-black text-yellow-300 leading-tight">0</span>
+        </div>
+      </div>
+
+      <!-- MEMBRI & PULSANTE ELIMINA -->
+      <div class="mt-4 pt-3 border-t border-white/20 flex justify-between items-center text-xs font-extrabold gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-white/90">Membri Totali:</span>
+          <div class="flex items-center gap-2 bg-black/20 px-2.5 py-1 rounded-xl backdrop-blur-sm">
+            <button onclick="adjustMembers(-1)" class="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/40 flex items-center justify-center font-black text-sm active:scale-95">-</button>
+            <span id="squad-members-display" class="text-base font-black px-1 text-yellow-300">5</span>
+            <button onclick="adjustMembers(1)" class="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/40 flex items-center justify-center font-black text-sm active:scale-95">+</button>
+          </div>
+        </div>
+
+        <button onclick="deleteCurrentSquad()" class="bg-red-600/80 hover:bg-red-600 active:scale-95 text-white text-[11px] font-black px-3 py-1.5 rounded-xl transition border border-red-400/30 flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-trash-can"></i>
+          <span>Elimina Squadriglia</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- BOTTONE AGGIUNGI GIORNATA -->
+    <button onclick="addGiornata()" class="w-full bg-slate-900 hover:bg-slate-800 active:scale-98 text-white font-black py-3.5 px-4 rounded-2xl shadow-md flex items-center justify-center gap-2 mb-4 transition text-sm">
+      <i class="fa-solid fa-plus text-emerald-400 text-base"></i>
+      <span>+ AGGIUNGI GIORNATA</span>
+    </button>
+
+    <!-- LISTA CARD GIORNATE -->
+    <div id="giornate-container" class="space-y-4">
+      <!-- Inserite dinamicamente da JS -->
+    </div>
+
+  </main>
+
+  <!-- MODALE AGGIUNGI SQUADRIGLIA -->
+  <div id="add-squad-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl border border-slate-100">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-black text-slate-800">⚜️ Nuova Squadriglia</h3>
+        <button onclick="closeAddSquadModal()" class="text-slate-400 hover:text-slate-600 font-bold p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <!-- NOME -->
+        <div>
+          <label class="block text-xs font-black uppercase text-slate-500 mb-1">Nome Squadriglia</label>
+          <input type="text" id="new-squad-name" placeholder="Es. Aquile, Volpi..." class="w-full text-sm font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <!-- ANIMALE / EMOJI -->
+        <div>
+          <label class="block text-xs font-black uppercase text-slate-500 mb-1">Scegli Animale / Emoji</label>
+          <div class="grid grid-cols-5 gap-2 mb-2" id="emoji-picker">
+            <button onclick="selectEmoji('🦅')" class="emoji-opt p-2 text-2xl bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200">🦅</button>
+            <button onclick="selectEmoji('🦊')" class="emoji-opt p-2 text-2xl bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200">🦊</button>
+            <button onclick="selectEmoji('🐺')" class="emoji-opt p-2 text-2xl bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200">🐺</button>
+            <button onclick="selectEmoji('🐻')" class="emoji-opt p-2 text-2xl bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200">🐻</button>
+            <button onclick="selectEmoji('🐴')" class="emoji-opt p-2 text-2xl bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200">🐴</button>
+            <button onclick="selectEmoji('🦉')" class="emoji-opt p-2 text-2xl bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200">🦉</button>
+            <button onclick="selectEmoji('🐬')" class="emoji-opt p-2 text-2xl bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200">🐬</button>
+            <button onclick="selectEmoji('🐍')" class="emoji-opt p-2 text-2xl bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200">🐍</button>
+            <button onclick="selectEmoji('🐝')" class="emoji-opt p-2 text-2xl bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200">🐝</button>
+            <button onclick="selectEmoji('🦈')" class="emoji-opt p-2 text-2xl bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200">🦈</button>
+          </div>
+          <input type="text" id="new-squad-emoji" placeholder="Oppure inserisci emoji personalizzata..." class="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <!-- COLORE -->
+        <div>
+          <label class="block text-xs font-black uppercase text-slate-500 mb-1">Colore Squadriglia</label>
+          <div class="grid grid-cols-6 gap-2" id="color-picker">
+            <button onclick="selectColor('#8b5cf6')" class="color-opt h-9 rounded-xl bg-[#8b5cf6] border-2 border-transparent"></button>
+            <button onclick="selectColor('#06b6d4')" class="color-opt h-9 rounded-xl bg-[#06b6d4] border-2 border-transparent"></button>
+            <button onclick="selectColor('#059669')" class="color-opt h-9 rounded-xl bg-[#059669] border-2 border-transparent"></button>
+            <button onclick="selectColor('#e11d48')" class="color-opt h-9 rounded-xl bg-[#e11d48] border-2 border-transparent"></button>
+            <button onclick="selectColor('#d97706')" class="color-opt h-9 rounded-xl bg-[#d97706] border-2 border-transparent"></button>
+            <button onclick="selectColor('#4338ca')" class="color-opt h-9 rounded-xl bg-[#4338ca] border-2 border-transparent"></button>
+          </div>
+        </div>
+
+        <!-- AZIONI MODALE -->
+        <div class="pt-2 flex gap-2">
+          <button onclick="closeAddSquadModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-3 rounded-xl transition text-xs">Annulla</button>
+          <button onclick="saveNewSquad()" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl transition text-xs">Crea Squadriglia</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configurazione base iniziale
+    const INITIAL_CONFIG = {
+      cigni: { name: 'CIGNI', emoji: '🦢', hex: '#4f46e5' },
+      antilopi: { name: 'ANTILOPI', emoji: '🦌', hex: '#f59e0b' },
+      leoni: { name: 'LEONI', emoji: '🦁', hex: '#10b981' },
+      tigri: { name: 'TIGRI', emoji: '🐯', hex: '#ef4444' }
+    };
+
+    let squadConfig = JSON.parse(localStorage.getItem('scout_squad_config_v6')) || INITIAL_CONFIG;
+
+    let activeSquad = localStorage.getItem('scout_active_squad_v6') || 'cigni';
+    if (!squadConfig[activeSquad]) {
+      activeSquad = Object.keys(squadConfig)[0] || 'cigni';
+    }
+
+    // Dati salvati
+    let appData = JSON.parse(localStorage.getItem('scout_presenze_v6')) || {
+      cigni: { membri: 5, giornate: [] },
+      antilopi: { membri: 5, giornate: [] },
+      leoni: { membri: 5, giornate: [] },
+      tigri: { membri: 5, giornate: [] }
+    };
+
+    // Variabili temporanee modale
+    let selectedEmoji = '🦅';
+    let selectedHex = '#8b5cf6';
+
+    function saveData() {
+      localStorage.setItem('scout_presenze_v6', JSON.stringify(appData));
+      localStorage.setItem('scout_squad_config_v6', JSON.stringify(squadConfig));
+      localStorage.setItem('scout_active_squad_v6', activeSquad);
+      render();
+    }
+
+    function clearAllData() {
+      if (confirm("Vuoi davvero azzerare tutti i dati di tutte le squadriglie?")) {
+        squadConfig = JSON.parse(JSON.stringify(INITIAL_CONFIG));
+        appData = {
+          cigni: { membri: 5, giornate: [] },
+          antilopi: { membri: 5, giornate: [] },
+          leoni: { membri: 5, giornate: [] },
+          tigri: { membri: 5, giornate: [] }
+        };
+        activeSquad = 'cigni';
+        saveData();
+      }
+    }
+
+    function switchSquad(sq) {
+      activeSquad = sq;
+      saveData();
+    }
+
+    /* GESTIONE ELIMINAZIONE SQUADRIGLIA */
+    function deleteCurrentSquad() {
+      const keys = Object.keys(squadConfig);
+      if (keys.length <= 1) {
+        alert("Impossibile eliminare l'unica squadriglia rimasta!");
+        return;
+      }
+
+      const currentName = squadConfig[activeSquad]?.name || 'questa squadriglia';
+      if (confirm(`Sei sicuro di voler ELIMINARE definitivamente la squadriglia "${currentName}" e tutti i suoi dati?`)) {
+        delete squadConfig[activeSquad];
+        delete appData[activeSquad];
+
+        activeSquad = Object.keys(squadConfig)[0];
+        saveData();
+      }
+    }
+
+    /* GESTIONE MODALE SQUADRIGLIE */
+    function openAddSquadModal() {
+      document.getElementById('new-squad-name').value = '';
+      document.getElementById('new-squad-emoji').value = '';
+      selectedEmoji = '🦅';
+      selectedHex = '#8b5cf6';
+      highlightSelectedEmoji();
+      highlightSelectedColor();
+      document.getElementById('add-squad-modal').classList.remove('hidden');
+    }
+
+    function closeAddSquadModal() {
+      document.getElementById('add-squad-modal').classList.add('hidden');
+    }
+
+    function selectEmoji(e) {
+      selectedEmoji = e;
+      document.getElementById('new-squad-emoji').value = e;
+      highlightSelectedEmoji();
+    }
+
+    function selectColor(hex) {
+      selectedHex = hex;
+      highlightSelectedColor();
+    }
+
+    function highlightSelectedEmoji() {
+      document.querySelectorAll('.emoji-opt').forEach(b => {
+        if (b.innerText === selectedEmoji) {
+          b.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
+        } else {
+          b.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50');
+        }
+      });
+    }
+
+    function highlightSelectedColor() {
+      document.querySelectorAll('.color-opt').forEach(b => {
+        if (b.style.backgroundColor === selectedHex || b.getAttribute('onclick').includes(selectedHex)) {
+          b.classList.add('ring-4', 'ring-slate-800');
+        } else {
+          b.classList.remove('ring-4', 'ring-slate-800');
+        }
+      });
+    }
+
+    function saveNewSquad() {
+      const nameInput = document.getElementById('new-squad-name').value.trim();
+      const customEmoji = document.getElementById('new-squad-emoji').value.trim();
+
+      if (!nameInput) {
+        alert("Inserisci un nome per la squadriglia!");
+        return;
+      }
+
+      const key = nameInput.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
+      const finalEmoji = customEmoji || selectedEmoji || '⚜️';
+
+      squadConfig[key] = {
+        name: nameInput.toUpperCase(),
+        emoji: finalEmoji,
+        hex: selectedHex
+      };
+
+      appData[key] = { membri: 5, giornate: [] };
+      activeSquad = key;
+
+      closeAddSquadModal();
+      saveData();
+    }
+
+    function adjustMembers(delta) {
+      const current = appData[activeSquad].membri || 5;
+      const updated = Math.max(1, current + delta);
+      appData[activeSquad].membri = updated;
+      saveData();
+    }
+
+    function addGiornata() {
+      const today = new Date().toISOString().split('T')[0];
+      if (!appData[activeSquad]) {
+        appData[activeSquad] = { membri: 5, giornate: [] };
+      }
+      appData[activeSquad].giornate.unshift({
+        id: Date.now(),
+        data: today,
+        p: 0,
+        turni: 0,
+        stileOk: 0,
+        stilePen: 0,
+        j: 0,
+        assCSq: false,
+        nessunoMessa: false,
+        no50Messa: false,
+        note: ''
+      });
+      saveData();
+    }
+
+    function deleteGiornata(id) {
+      appData[activeSquad].giornate = appData[activeSquad].giornate.filter(g => g.id !== id);
+      saveData();
+    }
+
+    function updateGiornataField(id, field, value) {
+      const g = appData[activeSquad].giornate.find(item => item.id === id);
+      if (g) {
+        g[field] = value;
+        saveData();
+      }
+    }
+
+    function calculateDayTotal(g, membri) {
+      if (g.no50Messa) return 0;
+
+      const propPres = (g.p * 5) / membri;
+      let total = propPres + (g.turni || 0) + (g.stileOk || 0) - (g.stilePen || 0) + (g.j || 0);
+
+      if (g.assCSq) total -= 2;
+      if (g.nessunoMessa) total -= 5;
+
+      return Math.round(total * 100) / 100;
+    }
+
+    function calculateSquadTotal(sqKey) {
+      const sq = appData[sqKey];
+      if (!sq || !sq.giornate) return 0;
+      let sum = 0;
+      sq.giornate.forEach(g => {
+        sum += calculateDayTotal(g, sq.membri);
+      });
+      return Math.round(sum * 100) / 100;
+    }
+
+    function render() {
+      // 1. Renderizza i pulsanti nella griglia principale
+      const grid = document.getElementById('squads-grid');
+      grid.innerHTML = '';
+
+      Object.keys(squadConfig).forEach(sqKey => {
+        const conf = squadConfig[sqKey];
+        const sqTot = calculateSquadTotal(sqKey);
+        const isActive = sqKey === activeSquad;
+
+        const btn = document.createElement('button');
+        btn.onclick = () => switchSquad(sqKey);
+        btn.className = `squad-btn relative p-3.5 rounded-2xl font-black text-white shadow-md transition-all transform active:scale-95 flex flex-col items-center justify-center border-2 border-transparent ${isActive ? 'ring-4 ring-offset-2 ring-slate-800 scale-102 opacity-100' : 'opacity-75'}`;
+        btn.style.backgroundColor = conf.hex;
+
+        btn.innerHTML = `
+          <div class="flex items-center gap-2 text-lg">
+            <span>${conf.emoji}</span>
+            <span>${conf.name}</span>
+          </div>
+          <span class="mt-1 text-[11px] bg-black/20 backdrop-blur-sm px-2.5 py-0.5 rounded-full font-bold">
+            TOT: ${sqTot} pts
+          </span>
+        `;
+        grid.appendChild(btn);
+      });
+
+      // PULSANTE "+" PER AGGIUNGERE NUOVA SQUADRIGLIA
+      const addBtn = document.createElement('button');
+      addBtn.onclick = openAddSquadModal;
+      addBtn.className = "p-3.5 rounded-2xl font-black text-slate-700 bg-white border-2 border-dashed border-slate-300 shadow-sm transition-all transform active:scale-95 flex flex-col items-center justify-center hover:border-slate-400 hover:bg-slate-50";
+      addBtn.innerHTML = `
+        <div class="flex items-center gap-1.5 text-base text-slate-600">
+          <i class="fa-solid fa-plus text-lg"></i>
+          <span>NUOVA</span>
+        </div>
+        <span class="mt-1 text-[10px] text-slate-400 font-bold">
+          Aggiungi
+        </span>
+      `;
+      grid.appendChild(addBtn);
+
+      // 2. Aggiorna Banner Squadra Attiva
+      const currentConf = squadConfig[activeSquad] || { name: 'SQUADRIGLIA', emoji: '⚜️', hex: '#4f46e5' };
+      const currentData = appData[activeSquad] || { membri: 5, giornate: [] };
+      
+      const squadBanner = document.getElementById('squad-banner');
+      squadBanner.style.backgroundColor = currentConf.hex;
+      document.getElementById('squad-banner-icon').innerText = currentConf.emoji;
+      document.getElementById('squad-banner-title').innerText = `SQUADRIGLIA ${currentConf.name}`;
+      document.getElementById('squad-grand-tot').innerText = calculateSquadTotal(activeSquad);
+      document.getElementById('squad-members-display').innerText = currentData.membri;
+
+      // 3. Renderizza Lista Giornate
+      const container = document.getElementById('giornate-container');
+      container.innerHTML = '';
+
+      if (!currentData.giornate || currentData.giornate.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 text-center text-slate-400 card-shadow border border-slate-200">
+            <i class="fa-solid fa-clipboard-list text-3xl mb-2 text-slate-300"></i>
+            <p class="font-extrabold text-sm text-slate-600">Nessuna giornata presente</p>
+            <p class="text-xs text-slate-400 mt-1">Clicca sul pulsante in alto per aggiungere la prima giornata!</p>
+          </div>
+        `;
+        return;
+      }
+
+      currentData.giornate.forEach((g, idx) => {
+        const isLocked = g.no50Messa;
+        const propPres = ((g.p * 5) / currentData.membri).toFixed(1);
+        const dayTot = calculateDayTotal(g, currentData.membri);
+
+        const card = document.createElement('div');
+        card.className = `bg-white rounded-2xl p-4 card-shadow border ${isLocked ? 'border-red-300 bg-red-50/20' : 'border-slate-200'} transition-all`;
+
+        card.innerHTML = `
+          <!-- CARD HEADER -->
+          <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black text-slate-400">#${currentData.giornate.length - idx}</span>
+              <input type="date" value="${g.data}" onchange="updateGiornataField(${g.id}, 'data', this.value)" class="text-xs font-extrabold text-slate-800 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
+            </div>
+            <button onclick="deleteGiornata(${g.id})" class="text-xs text-red-500 hover:text-red-700 font-bold bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition">
+              <i class="fa-solid fa-trash-can mr-1"></i> Elimina
+            </button>
+          </div>
+
+          <!-- NO 50% A MESSA (BOX BLOCCA TUTTO) -->
+          <div class="mb-3 p-2.5 bg-red-100/80 border border-red-200 rounded-xl flex items-center justify-between text-red-900">
+            <label class="flex items-center gap-2 text-xs font-black cursor-pointer select-none">
+              <input type="checkbox" ${g.no50Messa ? 'checked' : ''} onchange="updateGiornataField(${g.id}, 'no50Messa', this.checked)" class="w-4 h-4 rounded text-red-600 focus:ring-red-500">
+              <span>🚫 NO 50% A MESSA (Punteggio = 0)</span>
+            </label>
+          </div>
+
+          <!-- GRIGLIA CAMPI -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-3">
+
+            <!-- PRESENZE & PROP -->
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <label class="block text-[10px] font-black text-slate-500 uppercase mb-1">Presenze (P)</label>
+              <input type="number" min="0" max="${currentData.membri}" value="${g.p}" ${isLocked ? 'disabled' : ''} onchange="updateGiornataField(${g.id}, 'p', parseInt(this.value)||0)" class="w-full text-center font-black text-slate-800 text-sm p-1.5 rounded-lg border border-slate-200 bg-white disabled:opacity-50">
+              <div class="text-[10px] font-bold text-blue-600 mt-1 text-center">PROP: ${isLocked ? '0.0' : propPres}</div>
+            </div>
+
+            <!-- TURNI SELETTORE (+3 / -3 / 0) -->
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <label class="block text-[10px] font-black text-slate-500 uppercase mb-1">Turni (+3 / -3)</label>
+              <div class="flex gap-1">
+                <button type="button" ${isLocked ? 'disabled' : ''} onclick="updateGiornataField(${g.id}, 'turni', 3)" class="turni-btn flex-1 py-1 rounded-lg border border-slate-200 bg-white text-xs font-black text-slate-700 ${g.turni === 3 ? 'active-plus' : ''} disabled:opacity-50">+3</button>
+                <button type="button" ${isLocked ? 'disabled' : ''} onclick="updateGiornataField(${g.id}, 'turni', -3)" class="turni-btn flex-1 py-1 rounded-lg border border-slate-200 bg-white text-xs font-black text-slate-700 ${g.turni === -3 ? 'active-minus' : ''} disabled:opacity-50">-3</button>
+                <button type="button" ${isLocked ? 'disabled' : ''} onclick="updateGiornataField(${g.id}, 'turni', 0)" class="turni-btn flex-1 py-1 rounded-lg border border-slate-200 bg-white text-xs font-black text-slate-700 ${g.turni === 0 ? 'active-zero' : ''} disabled:opacity-50">0</button>
+              </div>
+            </div>
+
+            <!-- STILE (OK / PEN) -->
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <label class="block text-[10px] font-black text-slate-500 uppercase mb-1">Stile (OK / PEN)</label>
+              <div class="flex gap-1">
+                <input type="number" placeholder="OK" value="${g.stileOk}" ${isLocked ? 'disabled' : ''} onchange="updateGiornataField(${g.id}, 'stileOk', parseInt(this.value)||0)" class="w-1/2 text-center font-bold text-emerald-600 text-xs p-1.5 rounded-lg border border-slate-200 bg-white disabled:opacity-50">
+                <input type="number" placeholder="PEN" value="${g.stilePen}" ${isLocked ? 'disabled' : ''} onchange="updateGiornataField(${g.id}, 'stilePen', parseInt(this.value)||0)" class="w-1/2 text-center font-bold text-red-500 text-xs p-1.5 rounded-lg border border-slate-200 bg-white disabled:opacity-50">
+              </div>
+            </div>
+
+            <!-- JOLLY J -->
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <label class="block text-[10px] font-black text-slate-500 uppercase mb-1">Jolly (0 - 10)</label>
+              <input type="number" min="0" max="10" value="${g.j}" ${isLocked ? 'disabled' : ''} onchange="updateGiornataField(${g.id}, 'j', parseInt(this.value)||0)" class="w-full text-center font-black text-amber-600 text-sm p-1.5 rounded-lg border border-slate-200 bg-white disabled:opacity-50">
+            </div>
+
+            <!-- ASS C SQ (-2) -->
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col justify-center">
+              <label class="block text-[10px] font-black text-slate-500 uppercase mb-1">Ass C Sq (-2)</label>
+              <label class="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-700 mt-1">
+                <input type="checkbox" ${g.assCSq ? 'checked' : ''} ${isLocked ? 'disabled' : ''} onchange="updateGiornataField(${g.id}, 'assCSq', this.checked)" class="w-4 h-4 text-amber-500 rounded disabled:opacity-50">
+                <span>Applica -2</span>
+              </label>
+            </div>
+
+            <!-- NESSUNO A MESSA (-5) -->
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col justify-center">
+              <label class="block text-[10px] font-black text-slate-500 uppercase mb-1">Nessuno Messa (-5)</label>
+              <label class="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-700 mt-1">
+                <input type="checkbox" ${g.nessunoMessa ? 'checked' : ''} ${isLocked ? 'disabled' : ''} onchange="updateGiornataField(${g.id}, 'nessunoMessa', this.checked)" class="w-4 h-4 text-red-500 rounded disabled:opacity-50">
+                <span>Applica -5</span>
+              </label>
+            </div>
+
+          </div>
+
+          <!-- CAMPO NOTE (SEMPRE ATTIVO E MODIFICABILE) -->
+          <div class="mb-3">
+            <label class="block text-[10px] font-black text-slate-500 uppercase mb-1">Note (Sempre Modificabili)</label>
+            <input type="text" placeholder="Scrivi note..." value="${g.note || ''}" onchange="updateGiornataField(${g.id}, 'note', this.value)" class="w-full text-xs font-semibold p-2 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+
+          <!-- CARD FOOTER (TOTALE GIORNATA) -->
+          <div class="pt-2 border-t border-slate-100 flex justify-between items-center font-black">
+            <span class="text-xs text-slate-600 uppercase tracking-wider">Totale Giornata</span>
+            <span class="text-base text-blue-600">${dayTot} pts</span>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    // Primo caricamento all'avvio
+    render();
+  </script>
+</body>
+</html>
